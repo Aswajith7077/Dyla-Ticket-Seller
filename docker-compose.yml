@@ -11,6 +11,8 @@ services:
       retries: 5
 
   naive-store:
+    image: ghcr.io/aswajith7077/dyla-ticket-seller-naive-store:latest
+    pull_policy: always
     build:
       context: ./naive-store
       dockerfile: Dockerfile
@@ -26,6 +28,8 @@ services:
       retries: 5
 
   optimized-store:
+    image: ghcr.io/aswajith7077/dyla-ticket-seller-optimized-store:latest
+    pull_policy: always
     build:
       context: ./optimized-store
       dockerfile: Dockerfile
@@ -45,6 +49,8 @@ services:
       retries: 5
 
   frontend:
+    image: ghcr.io/aswajith7077/dyla-ticket-seller-frontend:latest
+    pull_policy: always
     build:
       context: ./frontend
       dockerfile: Dockerfile
