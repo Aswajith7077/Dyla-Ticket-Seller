@@ -16,9 +16,19 @@ class BuyResponse(BaseModel):
     sold_out: Optional[bool] = None
 
 
+class TicketAssignment(BaseModel):
+    ticket: int
+    user_id: str
+
+
 class StatusResponse(BaseModel):
     sold: int
-    tickets: dict[str, int]
+    # A flat list, not a dict keyed by ticket or by user: a dict keyed by
+    # user_id would silently overwrite a user's earlier ticket if they buy
+    # more than once, and a dict keyed by ticket_num can't represent two
+    # people racing to the same ticket number (exactly the bug this store
+    # is supposed to demonstrate) since object/hash keys can't repeat.
+    tickets: list[TicketAssignment]
 
 
 class HealthResponse(BaseModel):

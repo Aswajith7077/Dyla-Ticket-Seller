@@ -1,3 +1,4 @@
+import os
 import time
 from fastapi import APIRouter
 from app.state import get_redis, start_time
@@ -20,6 +21,7 @@ async def health():
         uptime=round(time.time() - start_time, 2),
         redis_ok=redis_ok,
         service="optimized",
+        instance_id=os.getenv("INSTANCE_ID", "standalone"),
     )
 
 

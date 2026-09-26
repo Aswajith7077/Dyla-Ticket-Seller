@@ -66,6 +66,7 @@ export async function runLoad(
             soldOut: data.sold_out ?? false,
             error: null,
             timestamp: Date.now(),
+            servedBy: res.headers.get("X-Served-By") ?? undefined,
           } satisfies RequestResult;
         } catch (err) {
           return {

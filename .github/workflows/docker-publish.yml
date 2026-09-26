@@ -75,8 +75,9 @@ jobs:
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            NEXT_PUBLIC_NAIVE_URL=${{ vars.NEXT_PUBLIC_NAIVE_URL }}
-            NEXT_PUBLIC_OPTIMIZED_URL=${{ vars.NEXT_PUBLIC_OPTIMIZED_URL }}
+            NEXT_PUBLIC_NAIVE_URL=${{ vars.NEXT_PUBLIC_NAIVE_URL || 'http://localhost:8001' }}
+            NEXT_PUBLIC_OPTIMIZED_URL=${{ vars.NEXT_PUBLIC_OPTIMIZED_URL || 'http://localhost:8002' }}
+            NEXT_PUBLIC_CLUSTER_URL=${{ vars.NEXT_PUBLIC_CLUSTER_URL || 'http://localhost:8003' }}
 
       - name: Build and push ${{ matrix.service }}
         if: matrix.service != 'frontend'

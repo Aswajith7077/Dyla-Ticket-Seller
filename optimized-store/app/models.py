@@ -11,14 +11,31 @@ class BuyRequest(BaseModel):
     request_id: str
 
 
+class ConfirmRequest(BaseModel):
+    request_id: str
+
+
 class BuyResponse(BaseModel):
     ticket: Optional[int] = None
+    status: Optional[str] = None  # "RESERVED" | "CONFIRMED"
     sold_out: Optional[bool] = None
+    waitlisted: Optional[bool] = None
+    position: Optional[int] = None  # queue position if waitlisted
+
+
+class TicketAssignment(BaseModel):
+    ticket: int
+    user_id: str
 
 
 class StatusResponse(BaseModel):
     sold: int
-    tickets: dict[str, int]
+    # A flat list, not a dict keyed by ticket or by user: a dict keyed by
+    # user_id would silently overwrite a user's earlier ticket if they buy
+    # more than once, and a dict keyed by ticket_num can't represent two
+    # people racing to the same ticket number (exactly the bug naive-store
+    # is supposed to demonstrate) since object/hash keys can't repeat.
+    tickets: list[TicketAssignment]
 
 
 class HealthResponse(BaseModel):
@@ -26,6 +43,7 @@ class HealthResponse(BaseModel):
     uptime: float
     redis_ok: bool
     service: str
+    instance_id: str = "standalone"
 
 
 class MetricsResponse(BaseModel):

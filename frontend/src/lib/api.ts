@@ -24,6 +24,18 @@ export async function postReset(base: string, ticketCount: number): Promise<void
   await axios.post(url(base, "/reset"), { ticket_count: ticketCount });
 }
 
+export async function postSlowInject(
+  base: string,
+  seconds: number,
+  delayMs: number
+): Promise<void> {
+  await axios.post(url(base, "/debug/slow"), null, { params: { seconds, delay_ms: delayMs } });
+}
+
+export async function postClearSlow(base: string): Promise<void> {
+  await axios.post(url(base, "/debug/slow/clear"));
+}
+
 export async function postBuy(
   base: string,
   userId: string,

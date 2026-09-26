@@ -44,7 +44,7 @@ export function ServicePanel({ label, snap }: Props) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Service Offline — check that the seller is running on port {label.match(/\d+/)?.[0] ?? "800X"}.
+            Service Offline — check that the seller is running on port {label.match(/\b\d{4}\b/)?.[0] ?? "800X"}.
           </p>
         </CardContent>
       </Card>
@@ -64,6 +64,9 @@ export function ServicePanel({ label, snap }: Props) {
               <Badge variant={health.redis_ok ? "default" : "destructive"}>
                 {health.redis_ok ? "Redis OK" : "Redis Down"}
               </Badge>
+            )}
+            {health?.instance_id && health.instance_id !== "standalone" && (
+              <Badge variant="outline">Instance {health.instance_id}</Badge>
             )}
             {health && (
               <span className="text-xs text-muted-foreground">Uptime {health.uptime}s</span>

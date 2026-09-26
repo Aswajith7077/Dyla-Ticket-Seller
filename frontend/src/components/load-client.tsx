@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { runLoad } from "@/lib/loadRunner";
 import { checkInvariants, percentile } from "@/lib/invariants";
-import { postReset, fetchStatus } from "@/lib/api";
+import { postReset, fetchStatus, postSlowInject, postClearSlow } from "@/lib/api";
 import type { RequestResult, InvariantResult, LoadConfig } from "@/lib/types";
 
 const BarChart = dynamic(() => import("recharts").then((m) => m.BarChart), { ssr: false });
@@ -27,8 +27,17 @@ const ResponsiveContainer = dynamic(
 
 const NAIVE_URL = process.env.NEXT_PUBLIC_NAIVE_URL!;
 const OPT_URL = process.env.NEXT_PUBLIC_OPTIMIZED_URL!;
+const CLUSTER_URL = process.env.NEXT_PUBLIC_CLUSTER_URL!;
 
-type Target = "naive" | "optimized" | "both";
+type Target = "naive" | "optimized" | "both" | "cluster";
+
+function resolveTargetUrl(target: Target): string {
+  if (target === "optimized") return OPT_URL;
+  if (target === "cluster") return CLUSTER_URL;
+  // "both" is a pre-existing option that isn't actually wired to run
+  // against both stores in one pass — left as-is, out of scope here.
+  return NAIVE_URL;
+}
 
 interface RunState {
   running: boolean;
@@ -102,7 +111,7 @@ export function LoadClient() {
   const lastBatchTime = useRef<number>(Date.now());
   const lastBatchCount = useRef<number>(0);
 
-  const targetUrl = form.target === "optimized" ? OPT_URL : NAIVE_URL;
+  const targetUrl = resolveTargetUrl(form.target);
 
   const startRun = useCallback(
     async (withReset: boolean) => {
@@ -143,11 +152,7 @@ export function LoadClient() {
             let invariantError: string | null = null;
             try {
               const status = await fetchStatus(targetUrl);
-              if (
-                typeof status?.sold !== "number" ||
-                typeof status?.tickets !== "object" ||
-                status.tickets === null
-              ) {
+              if (typeof status?.sold !== "number" || !Array.isArray(status?.tickets)) {
                 throw new Error("unexpected shape");
               }
               invariants = checkInvariants(status, results, form.ticketCount);
@@ -215,6 +220,17 @@ export function LoadClient() {
       })()
     : [];
 
+  const instanceData =
+    runResult && runResult.target === "cluster"
+      ? Object.entries(
+          runResult.results.reduce<Record<string, number>>((acc, r) => {
+            const instance = r.servedBy ?? "unknown";
+            acc[instance] = (acc[instance] ?? 0) + 1;
+            return acc;
+          }, {})
+        ).map(([instance, count]) => ({ instance, count }))
+      : [];
+
   const allPassed = runResult?.invariants?.every((inv) => inv.passed) ?? false;
 
   return (
@@ -227,8 +243,8 @@ export function LoadClient() {
           <CardTitle className="text-sm">Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex gap-2">
-            {(["naive", "optimized", "both"] as Target[]).map((t) => (
+          <div className="flex gap-2 items-center flex-wrap">
+            {(["naive", "optimized", "both", "cluster"] as Target[]).map((t) => (
               <Button
                 key={t}
                 size="sm"
@@ -238,6 +254,33 @@ export function LoadClient() {
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </Button>
             ))}
+            {form.target === "cluster" && (
+              <span className="text-xs text-muted-foreground">3 instances, nginx LB, port 8003</span>
+            )}
+          </div>
+
+          <div className="border rounded p-3 space-y-2">
+            <div className="text-xs font-medium text-muted-foreground">
+              Chaos Controls (optimized / cluster only)
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={form.target === "naive" || form.target === "both"}
+                onClick={() => postSlowInject(targetUrl, 10, 200)}
+              >
+                Inject 200ms Delay (10s)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={form.target === "naive" || form.target === "both"}
+                onClick={() => postClearSlow(targetUrl)}
+              >
+                Clear Delay
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -459,6 +502,24 @@ export function LoadClient() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {runResult.target === "cluster" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Load Distribution Across Instances</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={instanceData}>
+                    <XAxis dataKey="instance" tick={{ fontSize: 11 }} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
           <Button onClick={() => downloadPdf(reportRef, runResult)}>Download Report (PDF)</Button>
         </div>

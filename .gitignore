@@ -12,3 +12,4 @@
 # large backup/archive files should never be committed
 *.tar.gz
 *.zip
+trash/

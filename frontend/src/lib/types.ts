@@ -3,6 +3,7 @@ export interface HealthResponse {
   uptime: number;
   redis_ok: boolean;
   service: "naive" | "optimized";
+  instance_id?: string;
 }
 
 export interface MetricsResponse {
@@ -13,9 +14,14 @@ export interface MetricsResponse {
   errors: number;
 }
 
+export interface TicketAssignment {
+  ticket: number;
+  user_id: string;
+}
+
 export interface StatusResponse {
   sold: number;
-  tickets: Record<string, number>;
+  tickets: TicketAssignment[];
 }
 
 export interface ServiceSnapshot {
@@ -35,6 +41,7 @@ export interface RequestResult {
   soldOut: boolean;
   error: string | null;
   timestamp: number;
+  servedBy?: string;
 }
 
 export interface LoadConfig {

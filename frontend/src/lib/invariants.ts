@@ -5,7 +5,7 @@ export function checkInvariants(
   results: RequestResult[],
   ticketCount: number
 ): InvariantResult[] {
-  const ticketNums = Object.values(status.tickets);
+  const ticketNums = status.tickets.map((t) => t.ticket);
 
   const noOversell: InvariantResult = {
     name: "No Oversell",
